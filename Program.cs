@@ -46,7 +46,7 @@ namespace bananapi_socket_test
 
                 client.Connect(host, 7074);
 
-                client.ReceiveTimeout = 5000;
+                client.ReceiveTimeout = 15000;
 
                 KeepAlive(client);
 
@@ -89,8 +89,8 @@ namespace bananapi_socket_test
 
                         Console.WriteLine("Th: {0}. Received {1} bytes in {2} ms. Total {3} MB",
                             thId,
-                            Environment.TickCount - ini,
                             bytesToReceive,
+                            Environment.TickCount - ini,
                             total / 1024 / 1024);
                     }
                 }
@@ -130,8 +130,6 @@ namespace bananapi_socket_test
                 while (true)
                 {
                     Socket client = listener.Accept();
-
-                    ConfigureSocketParams(client);
 
                     Thread t = new Thread(new ParameterizedThreadStart(AttendClient));
                     t.Start(client);
@@ -177,70 +175,6 @@ namespace bananapi_socket_test
                             sizeToSend,
                             Environment.TickCount - ini,
                             total / 1024f / 1024f);
-                    }
-                }
-            }
-
-            static void ConfigureSocketParams(Socket socket)
-            {
-                socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.Debug, 1);
-                LingerOption optionValue = new LingerOption(true, 0);
-
-                socket.SetSocketOption(SocketOptionLevel.Socket,
-                    SocketOptionName.Linger, optionValue);
-
-                /*SetSocketOption.Set(socket, SetSocketOption.Option.SendTimeout,
-                    mChannelProperties.SocketConfigParams.SendTimeout);
-
-                SetSocketOption.Set(socket, SetSocketOption.Option.ReceiveTimeout,
-                    mChannelProperties.SocketConfigParams.ReceiveTimeout);
-
-                SetSocketOption.Set(socket, SetSocketOption.Option.SendBufferSize,
-                    mChannelProperties.SocketConfigParams.SendBufferSize);
-
-                SetSocketOption.Set(socket, SetSocketOption.Option.ReceiveBufferSize,
-                    mChannelProperties.SocketConfigParams.ReceiveBufferSize);*/
-            }
-
-
-            static class SetSocketOption
-            {
-                internal enum Option { SendTimeout, ReceiveTimeout, SendBufferSize, ReceiveBufferSize };
-
-                internal static void Set(Socket socket, Option option, int value)
-                {
-                    if (value == -1)
-                        return;
-
-                    int newValue = -1;
-
-                    switch (option)
-                    {
-                        case Option.SendTimeout:
-                            socket.SendTimeout = value;
-                            newValue = socket.SendTimeout;
-                            break;
-
-                        case Option.ReceiveTimeout:
-                            socket.ReceiveTimeout = value;
-                            newValue = socket.ReceiveTimeout;
-                            break;
-
-                        case Option.SendBufferSize:
-                            socket.SendBufferSize = value;
-                            newValue = socket.SendBufferSize;
-                            break;
-
-                        case Option.ReceiveBufferSize:
-                            socket.ReceiveBufferSize = value;
-                            newValue = socket.ReceiveBufferSize;
-                            break;
-                    }
-
-                    if (newValue != value)
-                    {
-                        Console.WriteLine("Error setting {0} to socket. Tried to set {1} but value is {2}",
-                            option.ToString(), value, newValue);
                     }
                 }
             }
