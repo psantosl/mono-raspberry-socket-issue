@@ -145,8 +145,8 @@ namespace bananapi_socket_test
                 using (NetworkStream ns = new NetworkStream(client))
                 using (BufferedStream buffered = new BufferedStream(ns))
                 {
-                    var reader = new PlasticBinaryReader(buffered);
-                    var writer = new PlasticBinaryWriter(buffered);
+                    var reader = new BinaryReader(buffered);
+                    var writer = new BinaryWriter(buffered);
 
                     int clientId = reader.ReadInt32();
 
@@ -161,21 +161,20 @@ namespace bananapi_socket_test
 
                         int ini = Environment.TickCount;
 
-                        writer.WriteInt32(sizeToSend);
+                        writer.Write(sizeToSend);
 
-                        writer.WriteBytes(buffer, 0, sizeToSend);
+                        writer.Write(buffer, 0, sizeToSend);
 
                         writer.Flush();
 
                         total += sizeToSend;
 
                         Console.WriteLine(
-                            "[{0}] - Sent {1} bytes in {2} ms. Total {3} MB. GC collections: 0:{4} - 1:{5} - 2:{6}",
+                            "[{0}] - Sent {1} bytes in {2} ms. Total {3} MB.",
                             clientId,
                             sizeToSend,
                             Environment.TickCount - ini,
-                            total / 1024f / 1024f,
-                            GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2));
+                            total / 1024f / 1024f);
                     }
                 }
             }
