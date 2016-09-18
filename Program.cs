@@ -86,16 +86,17 @@ namespace bananapi_socket_test
 
                 using (NetworkStream ns = new NetworkStream(client))
                 using (BufferedStream buffered = new BufferedStream(ns))
-                using (BinaryReader reader = new BinaryReader(buffered))
-                using (BinaryWriter writer = new BinaryWriter(buffered))
-                {
+                { 
+                    var reader = new PlasticBinaryReader(buffered);
+                    var writer = new PlasticBinaryWriter(buffered);
+                
                     int sizeToSend = reader.ReadInt32();
 
                     int ini = Environment.TickCount;
 
-                    writer.Write(sizeToSend);
+                    writer.WriteInt32(sizeToSend);
 
-                    writer.Write(buffer, 0, sizeToSend);
+                    writer.WriteBytes(buffer, 0, sizeToSend);
 
                     writer.Flush();
 
