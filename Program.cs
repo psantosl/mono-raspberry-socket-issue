@@ -48,8 +48,6 @@ namespace bananapi_socket_test
 
                 client.ReceiveTimeout = 15000;
 
-                KeepAlive(client);
-
                 byte[] buffer = new byte[5 * 1024 * 1024];
 
                 Random rnd = new Random();
@@ -94,25 +92,6 @@ namespace bananapi_socket_test
                             total / 1024 / 1024);
                     }
                 }
-            }
-
-            static void KeepAlive(Socket socket)
-            {
-                byte[] keepAliveOptions = GetKeepAliveOptions(true, 30 * 1000, 15 * 1000);
-                byte[] result = BitConverter.GetBytes(0);
-                socket.IOControl(IOControlCode.KeepAliveValues, keepAliveOptions, result);
-            }
-
-            static byte[] GetKeepAliveOptions(bool enabled, int keepAliveTime, int keepAliveInterval)
-            {
-                const int BYTES_PER_INT = 4;
-                byte[] options = new byte[3 * BYTES_PER_INT];
-
-                BitConverter.GetBytes((uint)(enabled ? 1 : 0)).CopyTo(options, BYTES_PER_INT * 0);
-                BitConverter.GetBytes((uint)keepAliveTime).CopyTo(options, BYTES_PER_INT * 1);
-                BitConverter.GetBytes((uint)keepAliveInterval).CopyTo(options, BYTES_PER_INT * 2);
-
-                return options;
             }
         }
 
