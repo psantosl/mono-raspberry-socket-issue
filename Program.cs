@@ -46,6 +46,8 @@ namespace bananapi_socket_test
 
                 client.Connect(host, 7074);
 
+                client.ReceiveTimeout = 5000;
+
                 KeepAlive(client);
 
                 byte[] buffer = new byte[5 * 1024 * 1024];
