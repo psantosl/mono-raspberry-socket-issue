@@ -4,6 +4,7 @@ using System.IO;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace bananapi_socket_test
 {
@@ -17,13 +18,30 @@ namespace bananapi_socket_test
                 return;
             }
 
+            int clients = 1;
+
+            if (!int.TryParse(args[1], out clients))
+                clients = 1;
+
+            for (int i = 0; i < clients - 1; ++i)
+            {
+                Thread t = new Thread(new ParameterizedThreadStart(Client.Run));
+                t.Start(args[0]);
+            }
+
             Client.Run(args[0]);
         }
 
+        static int ThCount = 0;
+
         static class Client
         {
-            internal static void Run(string host)
+            internal static void Run(object h)
             {
+                string host = h as string;
+
+                int thId = Interlocked.Increment(ref ThCount);
+
                 Socket client = new Socket(SocketType.Stream, ProtocolType.Tcp);
 
                 client.Connect(host, 7074);
@@ -40,13 +58,15 @@ namespace bananapi_socket_test
                 using (BinaryWriter writer = new BinaryWriter(ns))
                 using (BinaryReader reader = new BinaryReader(ns))
                 {
+                    writer.Write(thId);
+
                     while (true)
                     {
-                        int bytesToReceive = rnd.Next(2 * 1024 * 1024, 4 * 1024 * 1024);
+                        int bytesToReceive = rnd.Next(512 * 1024, 4 * 1024 * 1024);
 
                         int ini = Environment.TickCount;
 
-                        Console.Write("Going to request {0} bytes. ", bytesToReceive);
+                        //Console.Write("Going to request {0} bytes. ", bytesToReceive);
 
                         writer.Write(bytesToReceive);
 
@@ -60,13 +80,15 @@ namespace bananapi_socket_test
                         {
                             result += ns.Read(buffer, result, bytesToReceive - result);
 
-                            Console.Write(".");
+                            //Console.Write(".");
                         }
 
                         total += bytesToReceive;
 
-                        Console.WriteLine(". Received in {0} ms. Total {1} MB",
+                        Console.WriteLine("Th: {0}. Received {1} bytes in {2} ms. Total {3} MB",
+                            thId,
                             Environment.TickCount - ini,
+                            bytesToReceive,
                             total / 1024 / 1024);
                     }
                 }
@@ -103,23 +125,39 @@ namespace bananapi_socket_test
 
                 listener.Listen(5);
 
-                Socket client = listener.Accept();
+                while (true)
+                {
+                    Socket client = listener.Accept();
 
-                ConfigureSocketParams(client);
+                    ConfigureSocketParams(client);
+
+                    Thread t = new Thread(new ParameterizedThreadStart(AttendClient));
+                    t.Start(client);
+                }
+            }
+
+            static void AttendClient(object s)
+            {
+                Socket client = s as Socket;
 
                 long total = 0;
 
-                while (true)
+                using (NetworkStream ns = new NetworkStream(client))
+                using (BufferedStream buffered = new BufferedStream(ns))
                 {
-                    byte[] buffer = new byte[5 * 1024 * 1024];
+                    var reader = new PlasticBinaryReader(buffered);
+                    var writer = new PlasticBinaryWriter(buffered);
 
-                    using (NetworkStream ns = new NetworkStream(client))
-                    using (BufferedStream buffered = new BufferedStream(ns))
+                    int clientId = reader.ReadInt32();
+
+                    while (true)
                     {
-                        var reader = new PlasticBinaryReader(buffered);
-                        var writer = new PlasticBinaryWriter(buffered);
 
                         int sizeToSend = reader.ReadInt32();
+
+                        // just do this to put memory pressure on GC
+                        // otherwise it is totally stupid to do this way
+                        byte[] buffer = new byte[sizeToSend];
 
                         int ini = Environment.TickCount;
 
@@ -132,7 +170,8 @@ namespace bananapi_socket_test
                         total += sizeToSend;
 
                         Console.WriteLine(
-                            "Sent {0} bytes in {1} ms. Total {2} MB. GC collections: 0:{3} - 1:{4} - 2:{5}",
+                            "[{0}] - Sent {1} bytes in {2} ms. Total {3} MB. GC collections: 0:{4} - 1:{5} - 2:{6}",
+                            clientId,
                             sizeToSend,
                             Environment.TickCount - ini,
                             total / 1024f / 1024f,
