@@ -34,6 +34,7 @@ namespace bananapi_socket_test
 
             using (NetworkStream ns = new NetworkStream(client))
             using (BinaryWriter writer = new BinaryWriter(ns))
+            using (BinaryReader reader = new BinaryReader(ns))
             {
                 while (true)
                 {
@@ -46,6 +47,8 @@ namespace bananapi_socket_test
                     writer.Write(bytesToReceive);
 
                     writer.Flush();
+
+                    reader.ReadInt32();
 
                     int result = 0;
 
@@ -82,13 +85,19 @@ namespace bananapi_socket_test
                 byte[] buffer = new byte[5 * 1024 * 1024];
 
                 using (NetworkStream ns = new NetworkStream(client))
-                using (BinaryReader reader = new BinaryReader(ns))
+                using (BufferedStream buffered = new BufferedStream(ns))
+                using (BinaryReader reader = new BinaryReader(buffered))
+                using (BinaryWriter writer = new BinaryWriter(buffered))
                 {
                     int sizeToSend = reader.ReadInt32();
 
                     int ini = Environment.TickCount;
 
-                    ns.Write(buffer, 0, sizeToSend);
+                    writer.Write(sizeToSend);
+
+                    writer.Write(buffer, 0, sizeToSend);
+
+                    writer.Flush();
 
                     total += sizeToSend;
 
