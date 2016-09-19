@@ -123,14 +123,17 @@ namespace bananapi_socket_test
 
                 using (NetworkStream ns = new NetworkStream(client))
                 {
-                    var reader = new BinaryReader(ns);
-                    var writer = new BinaryWriter(ns);
+                    byte[] intBuffer = new byte[4];
 
-                    int clientId = reader.ReadInt32();
+                    ReadBytes(ns, intBuffer, 4);
+
+                    int clientId = BitConverter.ToInt32(intBuffer, 0);
 
                     while (true)
                     {
-                        int sizeToSend = reader.ReadInt32();
+                        ReadBytes(ns, intBuffer, 4);
+
+                        int sizeToSend = BitConverter.ToInt32(intBuffer, 0);
 
                         // just do this to put memory pressure on GC
                         // otherwise it is totally stupid to do this way
@@ -138,11 +141,11 @@ namespace bananapi_socket_test
 
                         int ini = Environment.TickCount;
 
-                        writer.Write(sizeToSend);
+                        ns.Write(intBuffer, 0, 4);
 
-                        writer.Write(buffer, 0, sizeToSend);
+                        ns.Write(buffer, 0, sizeToSend);
 
-                        writer.Flush();
+                        ns.Flush();
 
                         total += sizeToSend;
 
@@ -153,6 +156,16 @@ namespace bananapi_socket_test
                             Environment.TickCount - ini,
                             total / 1024f / 1024f);
                     }
+                }
+            }
+
+            static void ReadBytes(NetworkStream ns, byte[] buffer, int size)
+            {
+                int result = 0;
+
+                while (result < size)
+                {
+                    result += ns.Read(buffer, result, size - result);
                 }
             }
         }
