@@ -44,7 +44,7 @@ namespace bananapi_socket_test
 
                 Socket client = new Socket(SocketType.Stream, ProtocolType.Tcp);
 
-                client.Connect(host, 7074);
+                client.Connect(host, 7075);
 
                 client.ReceiveTimeout = 25000;
 
@@ -66,8 +66,6 @@ namespace bananapi_socket_test
 
                         int ini = Environment.TickCount;
 
-                        //Console.Write("Going to request {0} bytes. ", bytesToReceive);
-
                         writer.Write(bytesToReceive);
 
                         writer.Flush();
@@ -79,8 +77,6 @@ namespace bananapi_socket_test
                         while (result < bytesToReceive)
                         {
                             result += ns.Read(buffer, result, bytesToReceive - result);
-
-                            //Console.Write(".");
                         }
 
                         total += bytesToReceive;
@@ -102,7 +98,7 @@ namespace bananapi_socket_test
             {
                 Socket listener = new Socket(SocketType.Stream, ProtocolType.Tcp);
 
-                listener.Bind(new IPEndPoint(IPAddress.Any, 7074));
+                listener.Bind(new IPEndPoint(IPAddress.Any, 7075));
 
                 listener.Listen(5);
 
@@ -121,7 +117,7 @@ namespace bananapi_socket_test
 
                 long total = 0;
 
-                using (NetworkStream ns = new NetworkStream(client))
+                using (var ns = new MyNetworkStream(client))
                 using (BufferedStream buffered = new BufferedStream(ns))
                 {
                     var reader = new BinaryReader(buffered);
