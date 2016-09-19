@@ -46,7 +46,7 @@ namespace bananapi_socket_test
 
                 client.Connect(host, 7074);
 
-                client.ReceiveTimeout = 15000;
+                client.ReceiveTimeout = 25000;
 
                 byte[] buffer = new byte[5 * 1024 * 1024];
 
@@ -131,7 +131,6 @@ namespace bananapi_socket_test
 
                     while (true)
                     {
-
                         int sizeToSend = reader.ReadInt32();
 
                         // just do this to put memory pressure on GC
