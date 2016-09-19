@@ -44,7 +44,7 @@ namespace bananapi_socket_test
 
                 Socket client = new Socket(SocketType.Stream, ProtocolType.Tcp);
 
-                client.Connect(host, 7074);
+                client.Connect(host, 7075);
 
                 client.ReceiveTimeout = 25000;
 
@@ -102,7 +102,7 @@ namespace bananapi_socket_test
             {
                 Socket listener = new Socket(SocketType.Stream, ProtocolType.Tcp);
 
-                listener.Bind(new IPEndPoint(IPAddress.Any, 7074));
+                listener.Bind(new IPEndPoint(IPAddress.Any, 7075));
 
                 listener.Listen(5);
 
@@ -121,39 +121,56 @@ namespace bananapi_socket_test
 
                 long total = 0;
 
-                using (NetworkStream ns = new NetworkStream(client))
-                using (BufferedStream buffered = new BufferedStream(ns))
+                byte[] intBuffer = new byte[4];
+
+                ReadBytes(client, intBuffer, 4);
+
+                int clientId = BitConverter.ToInt32(intBuffer, 0);
+
+                while (true)
                 {
-                    var reader = new BinaryReader(buffered);
-                    var writer = new BinaryWriter(buffered);
+                    ReadBytes(client, intBuffer, 4);
 
-                    int clientId = reader.ReadInt32();
+                    int sizeToSend = BitConverter.ToInt32(intBuffer, 0);
 
-                    while (true)
-                    {
-                        int sizeToSend = reader.ReadInt32();
+                    // just do this to put memory pressure on GC
+                    // otherwise it is totally stupid to do this way
+                    byte[] buffer = new byte[sizeToSend];
 
-                        // just do this to put memory pressure on GC
-                        // otherwise it is totally stupid to do this way
-                        byte[] buffer = new byte[sizeToSend];
+                    int ini = Environment.TickCount;
 
-                        int ini = Environment.TickCount;
+                    SendBytes(client, intBuffer, 4);
 
-                        writer.Write(sizeToSend);
+                    SendBytes(client, buffer, sizeToSend);
 
-                        writer.Write(buffer, 0, sizeToSend);
+                    total += sizeToSend;
 
-                        writer.Flush();
+                    Console.WriteLine(
+                        "[{0}] - Sent {1} bytes in {2} ms. Total {3} MB.",
+                        clientId,
+                        sizeToSend,
+                        Environment.TickCount - ini,
+                        total / 1024f / 1024f);
+                }
+            }
 
-                        total += sizeToSend;
+            static void ReadBytes(Socket socket, byte[] buffer, int size)
+            {
+                int result = 0;
 
-                        Console.WriteLine(
-                            "[{0}] - Sent {1} bytes in {2} ms. Total {3} MB.",
-                            clientId,
-                            sizeToSend,
-                            Environment.TickCount - ini,
-                            total / 1024f / 1024f);
-                    }
+                while (result < size)
+                {
+                    result += socket.Receive(buffer, result, size - result, SocketFlags.None);
+                }
+            }
+
+            static void SendBytes(Socket socket, byte[] buffer, int size)
+            {
+                int sent = 0;
+
+                while (sent < size)
+                {
+                    sent += socket.Send(buffer, sent, size - sent, SocketFlags.None);
                 }
             }
         }
