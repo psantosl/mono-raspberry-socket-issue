@@ -44,7 +44,7 @@ namespace bananapi_socket_test
 
                 Socket client = new Socket(SocketType.Stream, ProtocolType.Tcp);
 
-                client.Connect(host, 7074);
+                client.Connect(host, 7075);
 
                 client.ReceiveTimeout = 25000;
 
@@ -102,7 +102,7 @@ namespace bananapi_socket_test
             {
                 Socket listener = new Socket(SocketType.Stream, ProtocolType.Tcp);
 
-                listener.Bind(new IPEndPoint(IPAddress.Any, 7074));
+                listener.Bind(new IPEndPoint(IPAddress.Any, 7075));
 
                 listener.Listen(5);
 
@@ -122,10 +122,9 @@ namespace bananapi_socket_test
                 long total = 0;
 
                 using (NetworkStream ns = new NetworkStream(client))
-                using (BufferedStream buffered = new BufferedStream(ns))
                 {
-                    var reader = new BinaryReader(buffered);
-                    var writer = new BinaryWriter(buffered);
+                    var reader = new BinaryReader(ns);
+                    var writer = new BinaryWriter(ns);
 
                     int clientId = reader.ReadInt32();
 
