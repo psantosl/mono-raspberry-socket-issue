@@ -46,7 +46,7 @@ namespace bananapi_socket_test
 
                 client.Connect(host, 7075);
 
-                client.ReceiveTimeout = 25000;
+                client.ReceiveTimeout = 35000;
 
                 byte[] buffer = new byte[5 * 1024 * 1024];
 
@@ -81,7 +81,7 @@ namespace bananapi_socket_test
 
                         total += bytesToReceive;
 
-                        Console.WriteLine("Th: {0}. Received {1} bytes in {2} ms. Total {3} MB",
+                        Console.WriteLine("Th: {0}. Received {1, 7} bytes in {2, 5} ms. Total {3} MB",
                             thId,
                             bytesToReceive,
                             Environment.TickCount - ini,
